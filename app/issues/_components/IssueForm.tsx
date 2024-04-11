@@ -1,5 +1,5 @@
 "use client";
-import { Button, Callout, Text, TextField } from "@radix-ui/themes";
+import { Button, Callout, TextField } from "@radix-ui/themes";
 import { useForm, Controller } from "react-hook-form";
 import axios from "axios";
 import "easymde/dist/easymde.min.css";
@@ -10,13 +10,10 @@ import { issueSchema } from "@/app/validationSchema";
 import { z } from "zod";
 import ErrorMessage from "@/app/components/ErrorMessage";
 import Spinner from "@/app/components/Spinner";
-import dynamic from "next/dynamic";
 import { Issue } from "@prisma/client";
+import SimpleMDE from "react-simplemde-editor";
 
 type IssueFormData = z.infer<typeof issueSchema>;
-const SimpleMDE = dynamic(() => import("react-simplemde-editor"), {
-  ssr: false,
-});
 
 const IssueForm = ({ issue }: { issue?: Issue }) => {
   const router = useRouter();
@@ -71,7 +68,7 @@ const IssueForm = ({ issue }: { issue?: Issue }) => {
         <ErrorMessage>{errors.description?.message}</ErrorMessage>
 
         <Button disabled={isSubmitting}>
-          {issue ? "Update Issue": "Submit New Issue"}{" "}
+          {issue ? "Update Issue" : "Submit New Issue"}{" "}
           {isSubmitting && <Spinner />}
         </Button>
       </form>
