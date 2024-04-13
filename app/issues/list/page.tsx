@@ -1,41 +1,52 @@
 import prisma from "@/prisma/client";
 import { Table } from "@radix-ui/themes";
-import React from "react";
 import { IssueStatusBadge, Link } from "@/app/components";
-import IssueActions from "./IssueActions";
-import { Status, Issue } from "@prisma/client";
 import NextLink from "next/link";
-import { ArrowUpIcon } from "@radix-ui/react-icons";
+import IssueActions from "./IssueActions";
+import { Issue, Status } from "@prisma/client";
+import { ArrowDownIcon, ArrowUpIcon } from "@radix-ui/react-icons";
 
 interface Props {
-  searchParams: { status: string; orderBy: keyof Issue };
+  searchParams: { status: Status; orderBy: keyof Issue; order: "asc" | "desc" };
 }
+
 const IssuesPage = async ({ searchParams }: Props) => {
-  let issues: Issue[] = [];
-
-  const columns: { label: string; value: keyof Issue; className?: string }[] = [
+  const columns: {
+    label: string;
+    value: keyof Issue;
+    className?: string;
+  }[] = [
     { label: "Issue", value: "title" },
-    { label: "Status", value: "status", className: "hidden md:table-cell" },
-    { label: "Created", value: "createdAt", className: "hidden md:table-cell" },
+    {
+      label: "Status",
+      value: "status",
+      className: "hidden md:table-cell",
+    },
+    {
+      label: "Created",
+      value: "createdAt",
+      className: "hidden md:table-cell",
+    },
   ];
-  if (
-    searchParams.status === "unassigned" ||
-    searchParams.status === undefined
-  ) {
-    issues = await prisma.issue.findMany();
-  } else {
-    const statuses = Object.values(Status);
-    const status = statuses.includes(searchParams.status as Status)
-      ? (searchParams.status as Status)
-      : undefined;
 
-    console.log(status);
-    issues = await prisma.issue.findMany({
-      where: {
-        status: status,
-      },
-    });
-  }
+  const statuses = Object.values(Status);
+  const status = statuses.includes(searchParams.status)
+    ? searchParams.status
+    : undefined;
+
+  const orderBy = columns
+    .map((column) => column.value)
+    .includes(searchParams.orderBy)
+    ? { [searchParams.orderBy]: searchParams.order }
+    : undefined;
+
+  console.log(orderBy);
+  const issues = await prisma.issue.findMany({
+    where: {
+      status,
+    },
+    orderBy,
+  });
 
   return (
     <div>
@@ -46,11 +57,30 @@ const IssuesPage = async ({ searchParams }: Props) => {
             {columns.map((column) => (
               <Table.ColumnHeaderCell key={column.value}>
                 <NextLink
-                  href={{ query: { ...searchParams, orderBy: column.value } }}
+                  href={{
+                    query: {
+                      ...searchParams,
+                      orderBy: column.value,
+                      order:
+                        column.value === searchParams.orderBy
+                          ? searchParams.order === "asc"
+                            ? "desc"
+                            : "asc"
+                          : "asc",
+                    },
+                  }}
                 >
                   {column.label}
                 </NextLink>
-                {column.value === searchParams.orderBy && <ArrowUpIcon className="inline"/>}
+                {column.value === searchParams.orderBy && (
+                  <>
+                    {searchParams.order === "asc" ? (
+                      <ArrowUpIcon className="inline" />
+                    ) : (
+                      <ArrowDownIcon className="inline" />
+                    )}
+                  </>
+                )}
               </Table.ColumnHeaderCell>
             ))}
           </Table.Row>
@@ -61,14 +91,11 @@ const IssuesPage = async ({ searchParams }: Props) => {
               <Table.Cell>
                 <Link href={`/issues/${issue.id}`}>{issue.title}</Link>
                 <div className="block md:hidden">
-                  <IssueStatusBadge status={issue.status}></IssueStatusBadge>
+                  <IssueStatusBadge status={issue.status} />
                 </div>
               </Table.Cell>
-              <Table.Cell
-                //hidden by default, handle for phone size
-                className="hidden md:table-cell"
-              >
-                <IssueStatusBadge status={issue.status}></IssueStatusBadge>
+              <Table.Cell className="hidden md:table-cell">
+                <IssueStatusBadge status={issue.status} />
               </Table.Cell>
               <Table.Cell className="hidden md:table-cell">
                 {issue.createdAt.toDateString()}
@@ -80,5 +107,7 @@ const IssuesPage = async ({ searchParams }: Props) => {
     </div>
   );
 };
+
 export const dynamic = "force-dynamic";
+
 export default IssuesPage;
