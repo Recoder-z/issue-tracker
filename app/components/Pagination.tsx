@@ -56,7 +56,8 @@ const Pagination = ({ itemCount, pageSize, currentPage }: Props) => {
       <Button
         color="gray"
         variant="soft"
-        disabled={currentPage === 1}
+        disabled={currentPage === pageCount}
+
         onClick={() => changePage(pageCount)}
       >
         <DoubleArrowRightIcon />
